@@ -11,16 +11,16 @@ task_push() {
   docker push danobot/rfgateway
 }
 task_receivelogs() {
-  docker logs -f gateway-rx
+  docker logs -f rx-rf-gateway
 }
 task_sendlogs() {
-  docker logs -f gateway-tx
+  docker logs -f tx-rf-gateway
 }
 task_pushc() {
   docker push danobot/crfgateway
 }
 task_buildc() {
-  nohup docker build -t danobot/crfgateway c-implementation/. &
+  nohup docker build -t danobot/crfgateway -f c-implementation/Dockerfile &
   echo "Build running in background. Access by tailing nohup.out file. "
 }
 

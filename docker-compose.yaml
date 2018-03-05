@@ -1,14 +1,16 @@
 version: "3"
 services:
-  gateway-rx:
+  rx:
     image: danobot/rfgateway
-    container_name: gateway-rx
+    container_name: rx-rf-gateway
+    restart: unless-stopped
     volumes:
       - ./receive.py:/app/script.py
     privileged: true
-  gateway-tx:
+  tx:
     image: danobot/rfgateway
-    container_name: gateway-tx
+    container_name: tx-rf-gateway
+    restart: unless-stopped
     volumes:
       - ./send.py:/app/script.py
     privileged: true
