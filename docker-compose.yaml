@@ -1,0 +1,14 @@
+version: "3"
+services:
+  gateway-rx:
+    image: danobot/rfgateway
+    container_name: gateway-rx
+    volumes:
+      - ./receive.py:/app/script.py
+    privileged: true
+  gateway-tx:
+    image: danobot/rfgateway
+    container_name: gateway-tx
+    volumes:
+      - ./send.py:/app/script.py
+    privileged: true

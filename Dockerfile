@@ -19,4 +19,4 @@ RUN mkdir app
 
 WORKDIR /app
 
-CMD ["python", "./receive.py"]
+CMD ["python", "./script.py"]

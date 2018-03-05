@@ -1,8 +1,0 @@
-version: "3"
-services:
-  gateway:
-    image: danobot/rfgateway
-    container_name: gateway
-    volumes:
-      - ./receive.py:/app/receive.py
-    privileged: true

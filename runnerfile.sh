@@ -4,5 +4,5 @@ source ./runner/src/runner.sh
 
 
 task_build_receive() {
-  docker build -t danobot/rfgateway ./receive
+  docker build -t danobot/rfgateway .
 }
