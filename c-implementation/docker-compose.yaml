@@ -1,0 +1,10 @@
+version: "3"
+services:
+  gateway:
+    image: danobot/crfgateway
+    container_name: gatewayc
+    # devices:
+    #   - "/dev/gpiomem:/dev/gpiomem"
+    #   - "/dev/mem:/dev/mem"
+
+    privileged: true

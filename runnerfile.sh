@@ -20,12 +20,12 @@ task_pushc() {
   docker push danobot/crfgateway
 }
 task_buildc() {
-  nohup docker build -t danobot/crfgateway c\ implementation/. &
+  nohup docker build -t danobot/crfgateway c-implementation/. &
   echo "Build running in background. Access by tailing nohup.out file. "
 }
 
 task_runc(){
-  cd c\ implementation
+  cd c-implementation
   docker-compose up
 }
 task_run(){
