@@ -1,8 +1,8 @@
 version: "3"
 services:
-  rx:
+  rfgateway:
     image: danobot/rfgateway
-    container_name: rx-rf-gateway
+    container_name: rfgateway-test
     restart: unless-stopped
     volumes:
       - ./receive.py:/app/script.py
