@@ -9,7 +9,7 @@ import paho.mqtt.publish as mqtt
 import paho.mqtt.client as mqtt_client
 GPIO_PIN = 15
 rfdevice = None
-MQTT_HOST = '10.1.1.130'
+MQTT_HOST = 'ubuntu'
 TOPIC = '/rf/'
 
 # pylint: disable=unused-argument
