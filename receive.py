@@ -7,6 +7,10 @@ import logging
 from rpi_rf import RFDevice
 import paho.mqtt.publish as mqtt
 import paho.mqtt.client as mqtt_client
+
+import paho.mqtt.publish as publish
+
+
 GPIO_PIN = 15
 rfdevice = None
 MQTT_HOST = 'ubuntu'
@@ -17,7 +21,7 @@ def exithandler(signal, frame):
     rfdevice.cleanup()
     sys.exit(0)
 
-logging.basicConfig(level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S',
+logging.basicConfig(level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S,%3s',
                     format='%(asctime)-15s - [%(levelname)s] %(module)s: %(message)s', )
 
 parser = argparse.ArgumentParser(description='Receives a decimal code via a 433/315MHz GPIO device')
@@ -37,9 +41,9 @@ logging.info("Listening for codes on GPIO " + str(args.gpio))
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
 
-client = mqtt_client.Client()
-client.on_connect = on_connect
-client.connect(MQTT_HOST, 1883)
+#client = mqtt_client.Client()
+#client.on_connect = on_connect
+#client.connect(MQTT_HOST, 1883)
 count = 0
 c = ""
 while True:
@@ -59,18 +63,20 @@ while True:
                 c = ""
 
 
-            logging.info(str(rfdevice.rx_code) +
+            
+            if code_range:
+                logging.info(str(rfdevice.rx_code) +
                          " [pulselength " + str(rfdevice.rx_pulselength) +
                          ", protocol " + str(rfdevice.rx_proto) + ", pulsewidth_range="+str(pulsewidth_range)+", code_range="+str(code_range)+"] " + string)
-            if code_range:
-                client.publish(TOPIC + str(rfdevice.rx_code), "ON")
-                client.publish(TOPIC + 'all', str(rfdevice.rx_code))
-                time.sleep(2)
-                client.publish(TOPIC + str(rfdevice.rx_code), "OFF") # for RF devices that can only be triggered and do not have state (such as motion sensors). This line sets Home Assistants binary_sensor state back to off.
+                #client.publish(TOPIC + str(rfdevice.rx_code), "ON")
+                #client.publish(TOPIC + 'all', str(rfdevice.rx_code))
+                publish.single(TOPIC+ 'all', str(rfdevice.rx_code), hostname=MQTT_HOST)
+                # time.sleep(2)
+                #client.publish(TOPIC + str(rfdevice.rx_code), "OFF") # for RF devices that can only be triggered and do not have state (such as motion sensors). This line sets Home Assistants binary_sensor state back to off.
             #else:
                 #logging.info("\t\t\t\t\t\t\t\t\t\t\t"+str(rfdevice.rx_code) + " [pulselength " + str(rfdevice.rx_pulselength) +                         ", protocol " + str(rfdevice.rx_proto) + "]")
 
-    client.loop()
+    #client.loop()
     time.sleep(0.007)
 
 rfdevice.cleanup()
