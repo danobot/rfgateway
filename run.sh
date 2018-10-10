@@ -8,7 +8,7 @@ task_build() {
   echo "Build running in background. Access by tailing nohup.out file. "
 }
 task_rebuild() {
-  docker build -t danobot/rfgateway . && docker-compose up rfgateway
+  docker build -t danobot/rfgateway . && docker-compose up --force-recreate rfgateway
 }
 task_push() {
   nohup docker push danobot/rfgateway &
