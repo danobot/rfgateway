@@ -51,7 +51,7 @@ while True:
                 string = ""
 
                              
-                if time.time() - expireCache > 5:
+                if time.time() - expireCache > 2:
                     cache.clear()
                     expireCache = time.time()
                     #logging.info("Clearing cache for ya'll")
