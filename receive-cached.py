@@ -75,33 +75,25 @@ logging.info("Listening for codes on GPIO " + str(args.gpio))
 codeCache = ExpiringDict() # Tracks recent codes, stops duplicate MQTT messages per RF code
 
 count = 0
-
+countTotal = 0
 # Continuously process RF signals
 while True:
     if rfdevice.rx_code_timestamp != timestamp:
         timestamp = rfdevice.rx_code_timestamp
         if rfdevice.rx_proto == 1: # ignore other RF protocols
             # Filter by pulsewidth
-            pulsewidth_range = 350 <= rfdevice.rx_pulselength <= 480 or 300 <= rfdevice.rx_pulselength <= 310 or 200<=rfdevice.rx_pulselength <= 290
-            
-            # Filter by code range
+            pulsewidth_range = True #350 <= rfdevice.rx_pulselength <= 480 or 300 <= rfdevice.rx_pulselength <= 310 or 200<=rfdevice.rx_pulselength <= 290
             code_range = rfdevice.rx_code > 10000
-            string = ""
-
-            if pulsewidth_range and code_range:
-                count = count +1
-                string = "**************************** #" + str(count)+"\n"
-
+            
+            countTotal = countTotal+1
             if code_range:
                 if codeCache.tick(rfdevice.rx_code) == 0: # Checks if code was processed already, if not:
-                    logging.info(str(rfdevice.rx_code) +
-                        " [pulselength " + str(rfdevice.rx_pulselength) +
-                        ", protocol " + str(rfdevice.rx_proto) + ", pulsewidth_range="+str(pulsewidth_range)+", code_range="+str(code_range)+"] " + string)
-                    #client.publish(TOPIC + str(rfdevice.rx_code), "ON")
-                    #client.publish(TOPIC + 'all', str(rfdevice.rx_code))
+                    count = count + 1
+                    logging.info('#{:>3} {:<8} [pulselength {:<3}, protocol {}] {:.2%}'.format(count, rfdevice.rx_code, rfdevice.rx_pulselength,rfdevice.rx_proto, count/countTotal))
                     publish.single(TOPIC+ 'all', str(rfdevice.rx_code), hostname=MQTT_HOST)
+                    publish.single(TOPIC + str(rfdevice.rx_code), "ON", hostname=MQTT_HOST)
                     codeCache[rfdevice.rx_code] = rfdevice.rx_code
-                    
+
             # else, we ignore because the RF device sent out multiple codes and we do not want multiple MQTT messages
 
     #client.loop()

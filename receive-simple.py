@@ -46,11 +46,7 @@ while True:
             pulsewidth_range = True #350 <= rfdevice.rx_pulselength <= 480 or 300 <= rfdevice.rx_pulselength <= 310 or 200<=rfdevice.rx_pulselength <= 290
             code_range = rfdevice.rx_code > 10000
             
-            
-            if code_range:
-                string = ""
-
-                             
+            if code_range:            
                 if time.time() - expireCache > 2:
                     cache.clear()
                     expireCache = time.time()
@@ -63,9 +59,8 @@ while True:
 
                         logging.info('#{:>3} {:<8} [pulselength {:<3}, protocol {}] {:.2%}'.format(count, rfdevice.rx_code, rfdevice.rx_pulselength,rfdevice.rx_proto, count/countTotal))
                         
-                        #client.publish(TOPIC + str(rfdevice.rx_code), "ON")
-                        #client.publish(TOPIC + "all", str(rfdevice.rx_code))
                         publish.single(TOPIC+ 'all', str(rfdevice.rx_code), hostname=MQTT_HOST)
+                        publish.single(TOPIC + str(rfdevice.rx_code), "ON", hostname=MQTT_HOST)
                         cache[rfdevice.rx_code] = 1
                         
                

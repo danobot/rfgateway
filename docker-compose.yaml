@@ -12,5 +12,6 @@ services:
     container_name: rfgateway
     restart: always
     volumes:
-      - /home/pi/repos/rfgateway/receive-simple.py:/app/script.py
+      - /home/pi/repos/rfgateway/receive-cached.py:/app/script.py
+      # - /home/pi/repos/rfgateway/receive-simple.py:/app/script.py
     privileged: true
