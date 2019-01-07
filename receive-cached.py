@@ -10,9 +10,9 @@ from rpi_rf import RFDevice
 # Calling class is responsible for calling clear() periodically to remove stale entries.
 class ExpiringDict(dict):
   
-    def __init__(self, *args):
-        dict.__init__(self, args)
-
+    def __init__(self, **kwargs):
+        dict.__init__(self, kwargs)
+        self.debounce = float(kwargs.get('debounce', 3.0))
     def __getitem__(self, key):
         return dict.__getitem__(self, key)[1]
         
@@ -28,7 +28,7 @@ class ExpiringDict(dict):
             item = dict.__getitem__(self, key)
             item_age = time.time() - item[1]
 
-            if item_age < 3: # age less than (still valid)
+            if item_age < self.debounce: # age less than (still valid)
                 #logging.info("Item still valid")
                 return 1
             else: # age older than (it expired, delete the record)
@@ -72,7 +72,7 @@ rfdevice.enable_rx()
 timestamp = None
 logging.info("Listening for codes on GPIO " + str(args.gpio))
 
-codeCache = ExpiringDict() # Tracks recent codes, stops duplicate MQTT messages per RF code
+codeCache = ExpiringDict(debounce=0.3) # Tracks recent codes, stops duplicate MQTT messages per RF code
 
 count = 0
 countTotal = 0
