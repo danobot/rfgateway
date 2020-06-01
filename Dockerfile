@@ -6,5 +6,6 @@ RUN pip3 install RPi.GPIO rpi-rf paho-mqtt
 RUN mkdir app
 
 WORKDIR /app
+# COPY ./receive-cached.py ./script.py
 
 CMD ["python", "./script.py"]
