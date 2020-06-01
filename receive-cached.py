@@ -3,8 +3,10 @@ import signal
 import sys
 import time
 import logging
-
+import os
 from rpi_rf import RFDevice
+import paho.mqtt.client as mqtt
+import paho.mqtt.publish as publish
 
 # A small helper class implementing a dictionary with expiring items. This class might cause memory leaks because items are deleted only when tick() is called with the key.
 # Calling class is responsible for calling clear() periodically to remove stale entries.
@@ -39,24 +41,41 @@ class ExpiringDict(dict):
             return 0 # same as if the record was there and it was deleted as a result of the tick call
 
 
-import paho.mqtt.publish as publish
+
+GPIO_PIN = os.getenv('GPIO_PIN') if os.getenv('GPIO_PIN') else 15
+MQTT_HOST = os.getenv('MQTT_HOST') if os.getenv('MQTT_HOST') else "tower.local"
+TOPIC = os.getenv('TOPIC') if os.getenv('TOPIC') else 'home/gw/433toMQTT'
+TEST_TOPIC = os.getenv('TEST_TOPIC') if os.getenv('TEST_TOPIC') else '/rftest'
 
 
-GPIO_PIN = 15
-rfdevice = None
-MQTT_HOST = 'ubuntu'
-TOPIC = '/rf/'
 
-# RF GPIO :: defines and registered exist handler to clean up GPIO when closing
-def exithandler(signal, frame):
-    rfdevice.cleanup()
-    sys.exit(0)
-
-signal.signal(signal.SIGINT, exithandler)
 
 # Logging
 logging.basicConfig(level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S',
                     format='%(asctime)-15s [%(levelname)s] %(module)s: %(message)s' )
+client = mqtt.Client()
+
+client.connect(MQTT_HOST, 1883, 60)
+def on_connect(client, userdata, flags, rc):
+    logging.info("Connected to MQTT broker with result code "+str(rc))
+
+    # Subscribing in on_connect() means that if we lose the connection and
+    # reconnect then subscriptions will be renewed.
+    client.subscribe(MQTT_TOPIC)
+
+# The callback for when a PUBLISH message is received from the server.
+def on_message(client, userdata, msg):
+    topic = msg.topic
+    if topic == MQTT_TEST_TOPIC:
+        client.publish(TEST_TOPIC  + "/result", payload=msg.payload, qos=0, retain=False)
+        return
+
+client.on_connect = on_connect
+client.on_message = on_message
+
+
+rfdevice = None
+
 
 # Argument Parsing
 parser = argparse.ArgumentParser(description='Receives a decimal code via a 433/315MHz GPIO device')
@@ -72,10 +91,9 @@ rfdevice.enable_rx()
 timestamp = None
 logging.info("Listening for codes on GPIO " + str(args.gpio))
 
-codeCache = ExpiringDict(debounce=0.3) # Tracks recent codes, stops duplicate MQTT messages per RF code
+codeCache = ExpiringDict(debounce=0.3) # Deduplicate:  Tracks recent codes, stops duplicate MQTT messages per RF code
 
 count = 0
-countTotal = 0
 # Continuously process RF signals
 while True:
     if rfdevice.rx_code_timestamp != timestamp:
@@ -85,13 +103,12 @@ while True:
             pulsewidth_range = True #350 <= rfdevice.rx_pulselength <= 480 or 300 <= rfdevice.rx_pulselength <= 310 or 200<=rfdevice.rx_pulselength <= 290
             code_range = rfdevice.rx_code > 10000
             
-            countTotal = countTotal+1
             if code_range:
                 if codeCache.tick(rfdevice.rx_code) == 0: # Checks if code was processed already, if not:
                     count = count + 1
-                    logging.info('#{:>3} {:<8} [pulselength {:<3}, protocol {}] {:.2%}'.format(count, rfdevice.rx_code, rfdevice.rx_pulselength,rfdevice.rx_proto, count/countTotal))
-                    publish.single(TOPIC+ 'all', str(rfdevice.rx_code), hostname=MQTT_HOST)
-                    publish.single(TOPIC + str(rfdevice.rx_code), "ON", hostname=MQTT_HOST)
+                    logging.info('{:<8} [pulselength {:<3}, protocol {}]'.format(rfdevice.rx_code, rfdevice.rx_pulselength,rfdevice.rx_proto))
+                    publish.single(TOPIC, "{\"value\":" + str(rfdevice.rx_code)+"}", hostname=MQTT_HOST)
+#                    publish.single(TOPIC + str(rfdevice.rx_code), "ON", hostname=MQTT_HOST)
                     codeCache[rfdevice.rx_code] = rfdevice.rx_code
 
             # else, we ignore because the RF device sent out multiple codes and we do not want multiple MQTT messages
@@ -99,5 +116,17 @@ while True:
     #client.loop()
     time.sleep(0.007)
 
-rfdevice.cleanup()
 
+
+## Test endpoint
+
+
+
+
+# RF GPIO :: defines and registered exist handler to clean up GPIO when closing
+def exithandler(signal, frame):
+    rfdevice.cleanup()
+    client.disconnect()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, exithandler)
